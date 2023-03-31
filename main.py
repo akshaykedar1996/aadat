@@ -4,7 +4,7 @@ from flask_restful import Api, Resource
 from flask_mysqldb import MySQL
 import Config
 # from FileUpload import upload
-from Singlefileu import upload
+from fuht import upload
 from flask_cors import CORS, cross_origin
 
 
