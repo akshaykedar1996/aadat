@@ -1,0 +1,22 @@
+{% load static %}
+<!DOCTTYPE html>
+<html>
+<head>
+    <title>Flask File show</title>
+</head>  
+<body>
+    <table>
+		<tr>
+			<th>ID</th>
+			<th>Name_File</th>
+		</tr>
+		{% for item in data %}
+		<tr>
+			<td>{{ item.id }}</td>
+			<td>{{ item.file }}</td>
+			
+		</tr>
+		{% endfor %}
+	</table>
+</body>  
+</html>

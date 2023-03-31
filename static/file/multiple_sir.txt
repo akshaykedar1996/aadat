@@ -1,0 +1,1002 @@
+views.py    
+
+
+from django.shortcuts import render
+
+# Create your views here.
+
+from django.shortcuts import render, redirect
+from api.models import Students
+from api.models import Education
+from api.forms import StudentsForm
+from api.forms import EducationForm
+from api.serialize import StudentsSerialize
+from api.serialize import EducationSerialize
+from rest_framework.response import Response
+from django.db import connection
+from django .views import View
+from rest_framework.decorators import api_view
+import requests
+from django.contrib import messages
+
+
+# Create your views here.
+
+
+
+# def std(request):
+#     if request.method == "POST":
+#         form = StudentsForm(request.POST) , EducationForm(request.POST),
+#         if form.is_valid():
+#             try:
+#                 form.save()
+#                 return redirect('/view')
+#             except:
+#                 pass
+#     else:
+#         form = StudentsForm() , EducationForm() 
+#         return render(request , 'index.html' ,{'form':form})   
+
+
+
+# def std(request):
+#     if request.method == "POST":
+#         form = StudentsForm(request.POST)
+#         if form.is_valid():
+#             try:
+#                 form.save()
+#                 return redirect('/view')
+#             except:
+#                 pass
+#     else:
+#         form = StudentsForm()
+#     return render(request , 'index.html' ,{'form':form})       
+
+          
+#=========================================================================================
+# how To display Multiple Table Into A Single Listview Element (3 tables)        
+
+def view(request):  
+     studentsobj = Students.objects.all()
+   # educationobj = Education.objects.all()
+     StudentsSerializeobj = StudentsSerialize(studentsobj , many=True)
+   # EducationSerializeobj = EducationSerialize(educationobj , many=True)
+     for r in StudentsSerializeobj.data:
+         sid = r["sid"]
+         Edu1 = Education.objects.get(sid = sid)
+        #print(Edu1.education10)
+         education10 = Edu1.education10
+         education12 = Edu1.education12
+         graduation =Edu1.graduation
+         post_graduation = Edu1.post_graduation
+         r.update({"education10":education10})
+         r.update({"education12":education12})
+         r.update({"graduation":graduation})
+         r.update({"post_graduation":post_graduation})
+    # students = Students.objects.all() 
+    # education = Education.objects.all() 
+    # print(students)
+    # print(education)
+     return render(request,'multipleview.html', {'students':StudentsSerializeobj.data})  
+
+
+def delete(request ,sid):
+    students = Students.objects.get(sid = sid)
+   # education = Education.objects.get(eid = eid)
+    students.delete()
+    return redirect("/view")
+
+
+def edit(request ,sid):
+    students = Students.objects.get(sid = sid) 
+    return render(request, 'edit.html', {'students':students})
+
+def update(request, sid):
+    students = Students.objects.get(sid = sid)
+    form = StudentsForm(request.POST, instance = students)    
+    form.save()
+    return redirect('/view')
+
+#==========================================================================
+
+def edit(request ,sid):
+    studentsobj = Students.objects.all()
+   # educationobj = Education.objects.all()
+    StudentsSerializeobj = StudentsSerialize(studentsobj , many=True)
+   # EducationSerializeobj = EducationSerialize(educationobj , many=True)
+    for r in StudentsSerializeobj.data:
+         sid = r["sid"]
+         Edu1 = Education.objects.get(sid = sid)
+        #print(Edu1.education10)
+         education10 = Edu1.education10
+         education12 = Edu1.education12
+         graduation =Edu1.graduation
+         post_graduation = Edu1.post_graduation
+         r.update({"education10":education10})
+         r.update({"education12":education12})
+         r.update({"graduation":graduation})
+         r.update({"post_graduation":post_graduation})
+  #  students = Students.objects.get(sid = sid) 
+    return render(request,'multipleview.html', {'students':StudentsSerializeobj.data}) 
+
+
+
+
+
+def abc(request):
+    return render(request,'base.html')
+  
+  
+#========================================================
+def data_read(request):
+      context = {'data_read':Students.objects.all()}
+      return render(request , 'data_read.html')
+  
+def data_form(request):
+    if request.method == "POST":
+        form = StudentsForm(request.POST)
+        if form.is_valid():
+            form.save()
+        return redirect('/data')  
+    else:
+        form = StudentsForm()
+        return render(request, "data_form.html",{'form':form})  
+    
+    
+    
+    
+    
+#=============================================================================
+# how To display Multiple Table Into A Single Listview Element (2 tables)json data
+
+@api_view(['GET'])
+def show(request):
+    studentsobj = Students.objects.all()
+   # educationobj = Education.objects.all()
+    StudentsSerializeobj = StudentsSerialize(studentsobj , many=True)
+   # EducationSerializeobj = EducationSerialize(educationobj , many=True)
+    for r in StudentsSerializeobj.data:
+        sid = r["sid"]
+        Edu1 = Education.objects.get(sid = sid)
+        #print(Edu1.education10)
+        education10 = Edu1.education10
+        education12 = Edu1.education12
+        graduation =Edu1.graduation
+        post_graduation = Edu1.post_graduation
+        r.update({"education10":education10})
+        r.update({"education12":education12})
+        r.update({"graduation":graduation})
+        r.update({"post_graduation":post_graduation})
+        
+        #print(post_graduation)
+    Resultmodel = StudentsSerializeobj.data 
+    return Response(Resultmodel)
+
+
+
+    
+def showmodels(request):
+    resultapi = request.get("http://127.0.0.1:8000/show/?format=api")
+    jsonobj = resultapi.json()
+    return render(request,'jsonshow.html' ,{"students":jsonobj , "education":jsonobj})
+          
+          
+#=================================================================
+
+def std(request):
+    if request.method =="POST":
+        if request.method.POST.get('sid') and request.method.POST.get('f_name')  and request.method.POST.get('l_name') and request.method.POST.get('email') and request.method.POST.get('phone') and request.method.POST.get('city') and  request.method.POST.get('address') and request.method.POST.get('state') and  request.method.POST.get('education10') and request.method.POST.get('education12') and request.method.POST.get('graduation') and request.method.POST.get('post_graduation'):
+            saverec = Students()
+            saverec= stname= request.POST.get('f_name')
+            saverec= l_name= request.POST.get('l_name')
+            saverec= email= request.POST.get('email')
+            saverec= phone= request.POST.get('phone')
+            saverec= city= request.POST.get('city')
+            saverec= address= request.POST.get('address')
+            saverec= state= request.POST.get('state')
+            saverec= education10= request.POST.get('education10')
+            saverec= education12= request.POST.get('education12')
+            saverec= graduation= request.POST.get('graduation')
+            saverec= post_graduation= request.POST.get('post_graduation')
+            cursor = connection.cursor()
+            cursor.execute("call education('"+saverec.f_name+"','"+saverec.l_name+"','"+saverec.email+"','"+saverec.phone+"','"+saverec.city+"','"+saverec.address+"' ,'"+saverec.state+"' ,'"+saverec.education10+"' ,'"+saverec.education12+"' ,'"+saverec.graduation+"' ,'"+saverec.post_graduation+"')")
+            messages.success(" the students "+saverec.f_name +" is saved successfully....")
+            return render(request , 'index.html')
+    else:
+            return render(request , 'index.html')    
+
+
+=============================================================================================
+
+index.html (add data)
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta chatset ="UTF-8">
+    <title>add info</title>
+  
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+<style>
+    body {
+        background-color: lightblue;
+      }
+      
+      h1 {
+        color: white;
+        text-align: center;
+      }
+      
+      p {
+        font-family: verdana;
+        font-size: 20px;
+      }
+      .aa{
+          text-align: center;
+          color: black;
+          backgroud-color: pink;
+      }
+      .bb{
+            backgroud-color: pink;
+      }
+    
+      text{
+        width: 255%;
+      }
+      #form-group row{
+        width: 89%;
+      }
+      .txtText{
+        width:300px !important;
+      }
+     
+</style>
+</head>  
+<body>
+    <center>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>    
+
+<div class="container" style="text-align:center;">
+<form method="POST" class="post-form" action="/std/">
+    {% csrf_token %}
+<div class="container">
+
+<br>
+    <div class="form-group row"  style="">
+    <h3 style="text-align:center;">Enter Details</h3>    
+    </div>   
+<br/><br/>
+
+
+    <div class="form-group row">
+        <label class="col-sm-2" style="font-size:143%;">Students f_name:</label> <br/>
+        <input type="text" name="f_name" id="f_name" style="width:90%;"/> 
+        </div>
+<br/>
+    <div class="form-group row">
+        <label class="col-sm-2" style="font-size:143%;">Students l_name:</label><br/> 
+        <input type="text" name="l_name" id="l_name" style="width:90%;"/>    
+        </div>
+<br/>
+
+    <div class="form-group row">
+        <label class="col-sm-2" style="font-size:143%;">Students email:</label> <br/>
+        <input type="text" name="email" id="email" style="width:90%;"/>     
+     
+        </div>
+<br/>
+
+    <div class="form-group row">
+        <label class="col-sm-2" style="font-size:130%;">Students Phone_no:</label> <br/>
+        <input type="text" name="phone" id="phone" style="width:90%;"/>      
+        </div> 
+<br/>            
+
+    <div class="form-group row">
+        <label class="col-sm-2" style="font-size:143%;">Students city:</label><br/>
+        <input type="text" name="city" id="city" style="width:90%;"/>        
+        </div>
+<br/>          
+                
+                
+    <div class="form-group row">
+        <label class="col-sm-2" style="font-size:143%;">Students address:</label> <br/>
+        <input type="text" name="address" id="address" style="width:90%;"/>       
+        </div> 
+<br/>        
+        
+    <div class="form-group row">
+        <label class="col-sm-2" style="font-size:143%;">Students state:</label><br/> 
+        <select required autofocus name="state" id="state" style="width:90%;">
+            <option value="">Select your option</option>
+            <option value="Andhra Pradesh">Andhra Pradesh</option>
+            <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+            <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+            <option value="Assam">Assam</option>
+            <option value="Bihar">Bihar</option>
+            <option value="Chandigarh">Chandigarh</option>
+            <option value="Chhattisgarh">Chhattisgarh</option>
+            <option value="Dadar and Nagar Haveli">Dadar and Nagar Haveli</option>
+            <option value="Daman and Diu">Daman and Diu</option>
+            <option value="Delhi">Delhi</option>
+            <option value="Lakshadweep">Lakshadweep</option>
+            <option value="Puducherry">Puducherry</option>
+            <option value="Goa">Goa</option>
+            <option value="Gujarat">Gujarat</option>
+            <option value="Haryana">Haryana</option>
+            <option value="Himachal Pradesh">Himachal Pradesh</option>
+            <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+            <option value="Jharkhand">Jharkhand</option>
+            <option value="Karnataka">Karnataka</option>
+            <option value="Kerala">Kerala</option>
+            <option value="Madhya Pradesh">Madhya Pradesh</option>
+            <option value="Maharashtra">Maharashtra</option>
+            <option value="Manipur">Manipur</option>
+            <option value="Meghalaya">Meghalaya</option>
+            <option value="Mizoram">Mizoram</option>
+            <option value="Nagaland">Nagaland</option>
+            <option value="Odisha">Odisha</option>
+            <option value="Punjab">Punjab</option>
+            <option value="Rajasthan">Rajasthan</option>
+            <option value="Sikkim">Sikkim</option>
+            <option value="Tamil Nadu">Tamil Nadu</option>
+            <option value="Telangana">Telangana</option>
+            <option value="ripura">Tripura</option>
+            <option value="Uttar Pradesh">Uttar Pradesh</option>
+            <option value="Uttarakhand">Uttarakhand</option>
+            <option value="West Bengal">West Bengal</option>
+        </select>       
+    </div>   
+<br/>
+
+<div class="form-group row">
+    <label class="col-sm-2" style="font-size:143%;">Students 10tH:</label><br/> 
+    <select required autofocus name="education10" id="education10" style="width:90%;">
+        <option value="">Select your option</option>
+        <option value="PASS">PASS</option>
+        <option value="FAILED">FAILED</option>
+    </select>       
+</div>   
+<br/>
+
+<div class="form-group row">
+    <label class="col-sm-2" style="font-size:143%;">Students 12TH:</label><br/> 
+    <select required autofocus name="education12" id="education12" style="width:90%;">
+        <option value="">Select your option</option>
+        <option value="PASS">PASS</option>
+        <option value="FAILED">FAILED</option>
+    </select>       
+</div>   
+<br/>
+
+<div class="form-group row">
+    <label class="col-sm-2" style="font-size:143%;">Graduation:</label><br/> 
+    <select required autofocus name="graduation" id="graduation" style="width:90%;">
+        <option value="">Select your graduation</option>
+        <option value="BA">BA</option>
+        <option value="B.COM">B.COM</option>
+        <option value="BSC">BSC</option>
+        <option value="BCS">BCS</option>
+        <option value="BCA">BCA</option>
+    </select>       
+</div>   
+<br/>
+
+<div class="form-group row">
+    <label class="col-sm-2" style="font-size:143%;">Post_Education:</label><br/> 
+    <select required autofocus name="post_graduation" id="post_graduation" style="width:90%;">
+        <option value="">Select your post_graduation</option>
+        <option value="MA">MA</option>
+        <option value="M.COM">M.COM</option>
+        <option value="MSC">MSC</option>
+        <option value="MCS">MCS</option>
+        <option value="MCA">MCA</option>
+    </select>       
+</div>   
+<br/>
+
+ 
+<div class="form-group row">
+    <button type="submit" class="btn btn-success" style="width:90%"; >submit</button>       
+</div> 
+<hr/>  
+{% if messages %}
+
+{% for display in messages %}
+{{display}}
+{% endfor %}
+
+{% endif %}
+
+</form>
+</div>
+<br/><br/><br/><br/><br/>
+</center>
+</body>
+</html>
+
+============================================================================================
+
+jsonshow.html
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Multiple models in a single view</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto|Varela+Round">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+    <style>
+        body {
+            font-family: 'Varela Round', sans-serif;
+            margin:20px;
+        }
+        .modal-confirm {		
+            color: #636363;
+            width: 400px;
+        }
+        .modal-confirm .modal-content {
+            padding: 20px;
+            border-radius: 5px;
+            border: none;
+            text-align: center;
+            font-size: 14px;
+        }
+        .modal-confirm .modal-header {
+            border-bottom: none;   
+            position: relative;
+        }
+        .modal-confirm h4 {
+            text-align: center;
+            font-size: 26px;
+            margin: 30px 0 -10px;
+        }
+        .modal-confirm .close {
+            position: absolute;
+            top: -5px;
+            right: -2px;
+        }
+        .modal-confirm .modal-body {
+            color: #999;
+        }
+        .modal-confirm .modal-footer {
+            border: none;
+            text-align: center;		
+            border-radius: 5px;
+            font-size: 13px;
+            padding: 10px 15px 25px;
+        }
+        .modal-confirm .modal-footer a {
+            color: #999;
+        }		
+        .modal-confirm .icon-box {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto;
+            border-radius: 50%;
+            z-index: 9;
+            text-align: center;
+            border: 3px solid #f15e5e;
+        }
+        .modal-confirm .icon-box i {
+            color: #f15e5e;
+            font-size: 46px;
+            display: inline-block;
+            margin-top: 13px;
+        }
+        .modal-confirm .btn, .modal-confirm .btn:active {
+            color: #fff;
+            border-radius: 4px;
+            background: #60c7c1;
+            text-decoration: none;
+            transition: all 0.4s;
+            line-height: normal;
+            min-width: 120px;
+            border: none;
+            min-height: 40px;
+            border-radius: 3px;
+            margin: 0 5px;
+        }
+        .modal-confirm .btn-secondary {
+            background: #c1c1c1;
+        }
+        .modal-confirm .btn-secondary:hover, .modal-confirm .btn-secondary:focus {
+            background: #a8a8a8;
+        }
+        .modal-confirm .btn-danger {
+            background: #f15e5e;
+        }
+        .modal-confirm .btn-danger:hover, .modal-confirm .btn-danger:focus {
+            background: #ee3535;
+        }
+        .trigger-btn {
+            display: inline-block;
+            margin: 100px auto;
+        } 
+        body
+        {
+            background-color: rgb(107, 189 ,152);
+            font-family: 'Varela Round', sans-serif;
+    
+        }
+        #head
+        {
+            text-align: center;
+            max-width: 80%;
+            margin-left: 9%;
+            padding: 0.5%;
+            background-color: rgb(226 ,225 ,223)
+    
+        }
+        #tbl
+        {
+            border: 2px solid;
+            text-align: center;
+            max-width: 80%;
+            width: 80%;
+            background-color: rgb(107, 189 ,152);
+        }
+        #OneDiv
+        {
+           text-align: center;
+           max-width:100%;
+           width: 100%;
+           margin-left: 9%;
+           padding: 0.5%;
+           background-color: rgb(107, 189 ,152);
+    
+        }
+        #SecondDiv
+        {
+           text-align: right;
+           margin-right: 11%;
+           
+    
+          
+    
+        }
+        table{
+            font-family: Arial, Helvetica, sans-serif;
+            border-collapse: collapse;
+            width: 90%;
+            margin:0px;
+            margin-bottom:30px;
+        }
+        td,th {
+            border: 2px solid #dddddd;
+            text-align: center;
+            padding: 8px;
+        }
+        tr:nth-child(even){
+            backgroud-color:#18c577;
+        }
+        #btn btn-success{
+              backgroud-color: red;
+        }
+        #btn btn-danger{
+            backgroud-color:
+        }
+       
+       </style>
+       <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"> 
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function()
+        {
+            $("td").each(function()
+         {
+            if(this.innerText==="") 
+            {
+                this.closest("tr").remove();
+            } 
+        })
+        });
+    </script>
+</head> 
+<body>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
+    <center>
+    <h1>How to Create Multiple models in A single view </h1>
+    <h2>Django Rest Framework<h2>
+<hr/>    
+        <table id="tbl" border="1">
+            <thead id ="head">
+                <th>sID</th>
+                <th>F_Name</th>
+                <th>L_Name</th>
+                <th>Email</th>
+                <th>PHONE</th>
+                <th>CITY</th>
+                <th>STATE</th>
+                <th>Action1</th>
+                <th>Action2</th>
+            </thead>
+            {% for d in students %}
+            <tr>
+                <td>{{ d.sid }}</td>
+                <td>{{ d.f_name }}</td>
+                <td>{{ d.l_name }}</td>
+                <td>{{ d.email }}</td>
+                <td>{{ d.phone }}</td>
+                <td>{{ d.city }}</td>
+                <td>{{ d.state }}</td>
+                <td><a href="/edit/{{ d.sid }}"><span class="btn btn-success"><i class="fa fa-edit" style="font-size:36px"></i></span></a></td>
+                <td><a href="/delete/{{ d.sid }}"  class="btn btn-danger btn-xs" onclick="return confirm('Are You Sure To Delete?')" ><span class="btn btn-danger"><i class="fa fa-trash" style="font-size:48px;color:red"></i></span></a></td>
+    
+                {% comment %} <td><a href="/edit?sid={{ d.sid }}"><span class="btn btn-success">Edit</span></a></td>
+                <td><a href="/delete?sid={{d.sid}}">Delete</a></td> {% endcomment %}
+            </tr>
+            {% endfor %}   
+     </table>
+
+     <hr/>
+    <h2>Education Table (Education)</h2>
+    <table border="1">
+    <thead id ="head">
+            <th>eID</th>
+            <th>Education10</th>
+            <th>Education12</th>
+            <th>Graduation</th>
+            <th>Post_Graduation</th>
+            <th>Action1</th>
+            <th>Action2</th>
+        </thead>
+        {% for e in education %}
+        <tr>
+            <td>{{ e.eid }}</td>
+            <td>{{ e.education10 }}</td>
+            <td>{{ e.education12 }}</td>
+            <td>{{ e.graduation }}</td>
+            <td>{{ e.post_graduation }}</td>
+            <td><a href="/edit/{{ e.eid }}"><span class="btn btn-success"><i class="fa fa-edit" style="font-size:36px"></i></span></a></td>
+            <td><a href="/delete/{{ e.eid }}"  class="btn btn-danger btn-xs" onclick="return confirm('Are You Sure To Delete?')" ><span class="btn btn-danger"><i class="fa fa-trash" style="font-size:48px;color:red"></i></span></a></td>
+        </tr>
+        {% endfor %}
+        </table>
+    </center>
+</body>   
+</html>
+
+=================================================================================================
+
+multipleview.html
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Listview display</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto|Varela+Round">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+    <style>
+        body {
+            font-family: 'Varela Round', sans-serif;
+            margin:20px;
+        }
+        .modal-confirm {		
+            color: #636363;
+            width: 400px;
+        }
+        .modal-confirm .modal-content {
+            padding: 20px;
+            border-radius: 5px;
+            border: none;
+            text-align: center;
+            font-size: 14px;
+        }
+        .modal-confirm .modal-header {
+            border-bottom: none;   
+            position: relative;
+        }
+        .modal-confirm h4 {
+            text-align: center;
+            font-size: 26px;
+            margin: 30px 0 -10px;
+        }
+        .modal-confirm .close {
+            position: absolute;
+            top: -5px;
+            right: -2px;
+        }
+        .modal-confirm .modal-body {
+            color: #999;
+        }
+        .modal-confirm .modal-footer {
+            border: none;
+            text-align: center;		
+            border-radius: 5px;
+            font-size: 13px;
+            padding: 10px 15px 25px;
+        }
+        .modal-confirm .modal-footer a {
+            color: #999;
+        }		
+        .modal-confirm .icon-box {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto;
+            border-radius: 50%;
+            z-index: 9;
+            text-align: center;
+            border: 3px solid #f15e5e;
+        }
+        .modal-confirm .icon-box i {
+            color: #f15e5e;
+            font-size: 46px;
+            display: inline-block;
+            margin-top: 13px;
+        }
+        .modal-confirm .btn, .modal-confirm .btn:active {
+            color: #fff;
+            border-radius: 4px;
+            background: #60c7c1;
+            text-decoration: none;
+            transition: all 0.4s;
+            line-height: normal;
+            min-width: 120px;
+            border: none;
+            min-height: 40px;
+            border-radius: 3px;
+            margin: 0 5px;
+        }
+        .modal-confirm .btn-secondary {
+            background: #c1c1c1;
+        }
+        .modal-confirm .btn-secondary:hover, .modal-confirm .btn-secondary:focus {
+            background: #a8a8a8;
+        }
+        .modal-confirm .btn-danger {
+            background: #f15e5e;
+        }
+        .modal-confirm .btn-danger:hover, .modal-confirm .btn-danger:focus {
+            background: #ee3535;
+        }
+        .trigger-btn {
+            display: inline-block;
+            margin: 100px auto;
+        } 
+        body
+        {
+            background-color: rgb(107, 189 ,152);
+            font-family: 'Varela Round', sans-serif;
+    
+        }
+        #head
+        {
+            text-align: center;
+            max-width: 80%;
+            margin-left: 9%;
+            padding: 0.5%;
+            background-color: rgb(226 ,225 ,223)
+    
+        }
+        #tbl
+        {
+            border: 2px solid;
+            text-align: center;
+            max-width: 80%;
+            width: 80%;
+            background-color: rgb(107, 189 ,152);
+        }
+        #OneDiv
+        {
+           text-align: center;
+           max-width:100%;
+           width: 100%;
+           margin-left: 9%;
+           padding: 0.5%;
+           background-color: rgb(107, 189 ,152);
+    
+        }
+        #SecondDiv
+        {
+           text-align: right;
+           margin-right: 11%;
+           
+    
+          
+    
+        }
+        table{
+            font-family: Arial, Helvetica, sans-serif;
+            border-collapse: collapse;
+            width: 90%;
+            margin:0px;
+            margin-bottom:30px;
+        }
+        td,th {
+            border: 2px solid #dddddd;
+            text-align: center;
+            padding: 8px;
+        }
+        tr:nth-child(even){
+            backgroud-color:#18c577;
+        }
+        #btn btn-success{
+              backgroud-color: red;
+        }
+        #btn btn-danger{
+            backgroud-color:
+        }
+       
+       </style>
+       <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"> 
+    </head>   
+</html>
+<body>
+<center>
+    <h1>how To display Multiple Table Into A Single Listview Element</h1>
+    <h2>Django Web Framework</h2>
+    <hr/>
+    <h2>Students Table (Students)</h2>
+    <table border="1">
+        <thead id ="head">
+            <th>sID</th>
+            <th>F_Name</th>
+            <th>L_Name</th>
+            <th>Email</th>
+            <th>PHONE</th>
+            <th>CITY</th>
+            <th>STATE</th>
+            <th>education10</th>
+            <th>education12</th>
+            <th>Graduation</th>
+            <th>Post_Graduation</th>
+            <th>Action1</th>
+            <th>Action2</th>
+        </thead>
+        {% for d in students %} 
+        <tr>
+            <td>{{ d.sid }}</td>
+            <td>{{ d.f_name }}</td>
+            <td>{{ d.l_name }}</td>
+            <td>{{ d.email }}</td>
+            <td>{{ d.phone }}</td>
+            <td>{{ d.city }}</td>
+            <td>{{d.state}}</td>
+            <td>{{d.education10}}</td>
+            <td>{{d.education12}}</td>
+            <td>{{d.graduation}}</td>
+            <td>{{d.post_graduation}}</td>
+            <td><a href="/edit/{{ d.sid }}{{ e.eid }}"><span class="btn btn-success"><i class="fa fa-edit" style="font-size:36px"></i></span></a></td>
+            <td><a href="/delete/{{ d.sid }}{{ e.eid }}"  class="btn btn-danger btn-xs" onclick="return confirm('Are You Sure To Delete?')" ><span class="btn btn-danger"><i class="fa fa-trash" style="font-size:48px;color:red"></i></span></a></td>
+
+            {% comment %} <td><a href="/edit?sid={{ d.sid }}"><span class="btn btn-success">Edit</span></a></td>
+            <td><a href="/delete?sid={{d.sid}}">Delete</a></td> {% endcomment %}
+        </tr>
+        {% endfor %} 
+        </table>
+
+
+</center>    
+</body>
+</html> 
+
+=========================================================================================================
+
+serializers.py
+
+from rest_framework import serializers
+from api.models import Students , Education
+
+class StudentsSerialize(serializers.ModelSerializer):
+    class Meta:
+        model = Students
+        fields = "__all__"
+        
+class EducationSerialize(serializers.ModelSerializer):
+    class Meta:
+        model = Education
+        fields = "__all__"        
+
+=========================================================================================================
+
+
+forms.py
+
+from django import forms
+from api.models import Students
+from api.models import Education
+
+
+
+class StudentsForm(forms.ModelForm):
+    class Meta:
+        model = Students
+        fields = "__all__"
+        
+class EducationForm(forms.ModelForm):  
+    class Meta:
+        model = Education
+        fields = "__all__"       
+
+========================================================================================================
+
+models.py
+
+
+from django.db import models
+#from store.models import Students
+#from store.forms import StudentsForm
+from django .views import View
+
+
+ccccc
+
+
+EDUCATION10_CHOICE =(
+    ('PASS','PASS'),
+    ('FAILED','FAILED'),
+)
+EDUCATION12_CHOICE =(
+    ('PASS','PASS'),
+    ('FAILED','FAILED'),
+)
+EDUCATION15_CHOICE =(
+    ('BA','BA'),
+    ('B.COM','B.COM'),
+    ('BSC','BSC'),
+    ('BCS','BCS'),
+    ('BCA','BCA'),
+)
+EDUCATION17_CHOICE =(
+    ('MA','MA'),
+    ('M.COM','M.COM'),
+    ('MSC','MSC'),
+    ('MCS','MCS'),
+    ('MCA','MCA'),
+)
+
+
+class Students(models.Model):
+    sid = models.AutoField(primary_key=True , auto_created=True)
+    f_name = models.CharField(max_length=200)
+    l_name = models.CharField(max_length=200)
+    email = models.EmailField(max_length=200)
+    phone = models.CharField(max_length=12)
+    city = models.CharField(max_length=200)
+    address = models.CharField(max_length=250)
+    state = models.CharField(choices=CHOICE_STATE, max_length=100 , null=True)
+   # education = models.CharField(choices=EDUCATION_CHOICE ,max_length=100 ,null=True)
+    class Meta:
+        db_table = "students"
+        
+        
+       
+    # def __str__(self):
+    #     return self.sid      
+        
+#Create your models here.
+
+class Education(models.Model):
+    eid  = models.AutoField(primary_key=True , auto_created= True)  
+    sid = models.ForeignKey(Students,default=None,on_delete=models.CASCADE)  
+    education10 = models.CharField(choices=EDUCATION10_CHOICE ,max_length=200, null = True)
+    education12 = models.CharField(choices=EDUCATION12_CHOICE ,max_length=200, null = True)
+    graduation = models.CharField(choices=EDUCATION15_CHOICE ,max_length=200, null = True)
+    post_graduation = models.CharField(choices=EDUCATION17_CHOICE ,max_length=200, null = True)  
+    class Meta:
+        db_table = "education" 
+     
+    # def __str__(self):
+    #     return self.eid   
+    
+    
+       
+        
+

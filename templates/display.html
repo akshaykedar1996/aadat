@@ -1,0 +1,24 @@
+<!-- display.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image to Text</title>
+</head>
+<body>
+    <h1>Image to Text</h1>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Name_File</th>
+            <th>Text</th>
+        </tr>
+        {% for item in data %}
+        <tr>
+            <td>{{ item.id }}</td>
+            <td>{{ item.image }}</td>
+            <td>{{ item.text }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
